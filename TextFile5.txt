@@ -1,0 +1,47 @@
+
+
+BT headphones state machine:
+
+inputs:
+
+time passes
+on/off
+BT pairing switch
+
+volume up press
+volume up hold
+
+volume down press
+volume down hold
+
+multifunction button press
+multifunction button hold
+
+Multifunction/Talk 
+P ress to answer or end calls.• P ress to play or pause multimedia files.• P ress and hold for one second to reject a call or to launch S Voice
+
+
+volume:
+P ress to adjust the volume during a call or media playback.• 
+
+P ress and hold the Volume (-) button to skip to the next file duringmedia playback.•
+
+P ress and hold the Volume (+) button to skip to the previous fileduring media playback.• 
+
+P ress and hold the Volume buttons (+ and -) simultaneously forabout a second to turn the vibration feature on or off.
+
+Lights
+Power on                    • Flashes blue three times
+Bluetooth pairingmode       • Flashes red, green, and blue
+Connected via Bluetooth      • Quickly flashes blue three times
+Incoming call               • Flashes blue
+Charging                    • Continuously on red
+Fully charged               • Continuously on green
+During use or in sleep mode  • Off
+
+
+
+
+
+
+
