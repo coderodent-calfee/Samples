@@ -83,48 +83,49 @@ void testFiniteStateMachine() {
 	FiniteStateMachine::Transitions transitions = {
 		std::make_shared<FSMStateTransition>("Off", "Pairing", "On/Off", conditionalFn), // except it needs to check "first time on"
 		std::make_shared<FSMStateTransition>("Off", "Searching", "On/Off", "on"),
-		std::make_shared<FSMStateTransition>("On", "Pairing", "Pairing Button"), // on any update (entry into Pairing sets button to false)
 		std::make_shared<FSMStateTransition>("Pairing", "Off", "On/Off", "off"),
 		std::make_shared<FSMStateTransition>("Pairing", "Searching", "Timer", "timeout"),
 		std::make_shared<FSMStateTransition>("Pairing", "Searching", "Paired With"), // transition on any update of the property
 		std::make_shared<FSMStateTransition>("Searching", "Off", "Timer", "timeout"),
 		std::make_shared<FSMStateTransition>("Searching", "Connected", "Connection", "connected"),
 		std::make_shared<FSMStateTransition>("Searching", "Off", "On/Off", "off"),
+		std::make_shared<FSMStateTransition>("Searching", "Pairing", "Pairing Button"), // on any update (entry into Pairing sets button to false)
 		std::make_shared<FSMStateTransition>("Connected", "Off", "On/Off", "off"),
 		std::make_shared<FSMStateTransition>("Connected", "Pairing", "Pairing Button"),
 		std::make_shared<FSMStateTransition>("Connected", "Searching", "Connection", "disconnected"),
 	};
 	
-	FSMTestHeadset fsm(props, states, transitions, "Off");
+	auto fsm = std::make_shared<FSMTestHeadset>(props, states, transitions, "Off");
+	auto graph = std::make_shared<FSMGraphAdapter>(fsm);
 
 	cout << "init" << endl;
-	assert(fsm.getState() == "Off");
+	assert(fsm->getState() == "Off");
 
-	fsm.setProperty("On/Off", "on");
-	assert(fsm.getState() == "Pairing");
+	fsm->setProperty("On/Off", "on");
+	assert(fsm->getState() == "Pairing");
 
-	fsm.setProperty("Paired With", "Mobile Phone");
-	assert(fsm.getState() == "Searching");
+	fsm->setProperty("Paired With", "Mobile Phone");
+	assert(fsm->getState() == "Searching");
 
-	fsm.setProperty("On/Off", "off");
-	assert(fsm.getState() == "Off");
+	fsm->setProperty("On/Off", "off");
+	assert(fsm->getState() == "Off");
 
-	fsm.setProperty("On/Off", "on");
-	assert(fsm.getState() == "Searching");
+	fsm->setProperty("On/Off", "on");
+	assert(fsm->getState() == "Searching");
 
-	fsm.setProperty("Connection", "connected");
-	assert(fsm.getState() == "Connected");
+	fsm->setProperty("Connection", "connected");
+	assert(fsm->getState() == "Connected");
 
-	fsm.setProperty("Connection", "disconnected");
-	assert(fsm.getState() == "Searching");
+	fsm->setProperty("Connection", "disconnected");
+	assert(fsm->getState() == "Searching");
 
-	fsm.setProperty("On/Off", "off");
-	assert(fsm.getState() == "Off");
+	fsm->setProperty("On/Off", "off");
+	assert(fsm->getState() == "Off");
 
 
 	cout << endl << "OK! **done**" << endl;
 
-
+	graph->show();
 
 	//auto onOffSwitch = std::make_shared<SwitchInput>();
 	//fsm.addInput(onOffSwitch);

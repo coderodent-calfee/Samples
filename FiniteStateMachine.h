@@ -17,7 +17,10 @@
 #include "Property.h"
 #include "FSMState.h"
 
-
+#include <cmath>
+#include <matplot/matplot.h>
+#include <type_traits>
+#include <tuple>
 
 //class FSMOutput;
 //class FSMInput;
@@ -25,8 +28,7 @@ class FSMStateInterface;
 class FSMState;
 class FiniteStateMachine;
 
-//typedef std::shared_ptr<FSMOutput > FSMOutputPtr;
-//typedef std::shared_ptr<FSMInput  > FSMInputPtr;
+typedef std::shared_ptr<FiniteStateMachine> FSMContextPtr;
 
 // todo: remove things that are not needed in h files
 // need edges defined in construction of FSM; once created we should be able to draw graph
@@ -59,6 +61,12 @@ public:
       return std::make_pair<>(name, std::make_shared<FSMStateImplementation>(name, std::make_shared<T>()));
    }
 
+   typedef std::vector<std::pair<size_t, size_t>> Edges;
+   typedef std::vector<std::string> Names;
+   typedef std::tuple<FiniteStateMachine::Edges, FiniteStateMachine::Names, FiniteStateMachine::Names> EdgesWithNames;
+
+   EdgesWithNames getEdgesWithNames() const;
+
 private:
    void buildTransitionsForState(const std::string& state);
    void enterState(const std::string& state);
@@ -75,5 +83,18 @@ private:
 };
 
 
-
-
+class FSMGraphAdapter {
+private:
+   std::shared_ptr<class matplot::network> graph_;
+   int  currentState_;
+   int  previousState_;
+   int  transition_;
+   FiniteStateMachine::Names edgeNames_;
+   FiniteStateMachine::Names nodeNames_;
+   
+public:
+   FSMGraphAdapter(const FSMContextPtr& ctx);
+   void show() {
+      matplot::show();
+   }
+};

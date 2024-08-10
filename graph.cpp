@@ -1,11 +1,16 @@
 #include <cmath>
 #include <matplot/matplot.h>
 #include <type_traits>
+#include <numeric>
+#include <iterator> //for std::ostream_iterator
+#include <algorithm> //for std::copy
+#include <iostream> //for std::cout
 
+#include "FiniteStateMachine.h"
 
 std::vector<std::pair<size_t, size_t>> get_edges();
 
-int doGraph() {
+int doGraphOld() {
    using namespace matplot;
    std::vector<std::pair<size_t, size_t>> edges = {
        {0, 1}, {0, 2}, {0, 9},  {1, 3},  {1, 11}, {2, 3},
@@ -58,4 +63,64 @@ std::vector<std::pair<size_t, size_t>> get_edges() {
        {43, 45}, {44, 57}, {45, 46}, {45, 49}, {46, 47}, {47, 48}, {48, 49},
        {48, 50}, {49, 58}, {50, 51}, {50, 54}, {51, 52}, {52, 53}, {53, 54},
        {54, 59}, {55, 56}, {55, 59}, {56, 57}, {57, 58}, {58, 59} };
+}
+
+
+
+
+FSMGraphAdapter::FSMGraphAdapter(const FSMContextPtr& ctx) {
+   using namespace matplot;
+
+   // todo: get edges from ctx
+   auto[ edges, edgeNames, nodeNames] = ctx->getEdgesWithNames();
+   
+   auto stateToIndex = [&nodeNames](const std::string& stateName) { return std::find(nodeNames.begin(), nodeNames.end(), stateName) - nodeNames.begin(); };
+
+   edgeNames_ = edgeNames;
+   nodeNames_ = nodeNames;
+   currentState_ = (int)stateToIndex(ctx->getState());
+
+   auto g = digraph(edges);
+   graph_ = g;
+   g->node_labels(nodeNames);// array of labels for the nodes
+
+   std::cout << "nodes:" << std::endl;
+   std::copy(nodeNames.begin(), nodeNames.end(), std::ostream_iterator<std::string>(std::cout, " "));
+   std::cout << std::endl;
+
+   g->line_style("-");
+   g->marker("o");
+   g->marker_size(20);
+   g->node_color("yellow");
+
+   auto lineSpec = g->line_spec();
+
+
+   std::vector<double> colors(nodeNames.size());
+   std::fill_n(colors.begin(), nodeNames.size(), 1.0);
+   colors[currentState_] = 2.0;
+   g->marker_colors(colors);
+   std::cout << "colors:" << std::endl;
+   std::copy(colors.begin(), colors.end(), std::ostream_iterator<double>(std::cout, " "));
+   std::cout << std::endl;
+
+   std::vector<float> markerSizes(nodeNames.size());
+   std::generate(markerSizes.begin(), markerSizes.end(), []() { return 3.0f; });
+   markerSizes[currentState_] = 5.0;
+   g->marker_sizes(markerSizes);
+   auto marker_sizes = g->marker_sizes();
+
+
+   //std::vector<double> lineWidths(edgeNames_.size());
+   //std::generate(lineWidths.begin(), lineWidths.end(), []() { return 10.0; });
+   //lineWidths[1] = 30.0;
+   //g->line_widths(lineWidths);
+
+   std::vector<std::string> edgesA(edgeNames_.size());
+
+   std::generate(edgesA.begin(), edgesA.end(), []() { return std::string(""); });
+   edgesA[1] = edgeNames_[1];
+   g->edge_labels(edgesA); // only show edge name when transition was active
+
+
 }

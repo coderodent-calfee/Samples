@@ -4,6 +4,7 @@
 // https://github.com/digint/tinyfsm/tree/01908cab0397fcdadb0a14e9a3187c308e2708ca
 
 #include "FiniteStateMachine.h"
+#include <ranges>
 
 template <typename T> void FiniteStateMachine::validate(const T& map, std::string key) const {
    if (!map.count(key)) {
@@ -23,6 +24,14 @@ FiniteStateMachine::FiniteStateMachine( Properties properties, States states, Tr
    transitions_(transitions.begin(), transitions.end()),
    currentState_(startState) 
 {
+
+   // todo validate all edges against known states
+   std::for_each(transitions_.begin(), transitions_.end(), [&](const FSMTransitionPtr& transition) {
+      validate<>(states_, transition->getFrom());
+      validate<>(states_, transition->getTo());
+      });
+
+
    hiddenStateWithNoTransitions_ = std::make_shared<FSMStateImplementation>("hiddenStateWithNoTransitions", std::make_shared<FSMEmptyState>());
    enterState(currentState_);
 }
@@ -91,4 +100,25 @@ void FiniteStateMachine::addInput(SubjectPtr input) {
    auto o = input->getObserver();
    o->setUpdate([&](const MessageType& m) { MyUpdate(m); });
    inputObservers_.push_back(o);
+}
+
+
+FiniteStateMachine::EdgesWithNames FiniteStateMachine::getEdgesWithNames() const {
+   Edges edges;
+   Names edgeNames;
+
+   auto kv = std::views::keys(states_);
+   Names stateNames{ kv.begin(), kv.end() };
+
+   auto stateToIndex = [&stateNames](const std::string& stateName) { return std::find(stateNames.begin(), stateNames.end(), stateName) - stateNames.begin(); };
+
+   std::transform(transitions_.begin(), transitions_.end(),
+      std::inserter(edges, edges.end()),
+      [&](const FSMTransitionPtr& edge) {
+         return std::make_pair(stateToIndex(edge->getFrom()), stateToIndex(edge->getTo()));
+      });
+   std::transform(transitions_.begin(), transitions_.end(),
+      std::inserter(edgeNames, edgeNames.end()), [&](const FSMTransitionPtr& edge) { return edge->getName(); });
+
+   return std::make_tuple(edges, edgeNames, stateNames);
 }
