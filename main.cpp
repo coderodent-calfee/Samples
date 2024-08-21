@@ -11,7 +11,7 @@ int main()
    //testSimpleZoneQueueManager();
    //testPriceDivergenceMonitor();
 
-   testFiniteStateMachine();
+   //testFiniteStateMachine();
    //testAirlineSeatPricer();
    //testIslandExplorer();
    //testIslandExplorerNoRecurse();
@@ -23,4 +23,5 @@ int main()
    //testCoinChange();
    //testWheelCount();
    //doGraph();
+   doVolunteerJobs();
 }

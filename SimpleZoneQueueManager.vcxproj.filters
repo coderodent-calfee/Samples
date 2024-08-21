@@ -57,6 +57,9 @@
     <ClCompile Include="FSMTestHeadset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Volunteers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PlayerData.h">

@@ -158,6 +158,7 @@
     <ClCompile Include="Subject.cpp" />
     <ClCompile Include="Tasks.cpp" />
     <ClCompile Include="test.cpp" />
+    <ClCompile Include="Volunteers.cpp" />
     <ClCompile Include="ZoneQueue.cpp" />
   </ItemGroup>
   <ItemGroup>

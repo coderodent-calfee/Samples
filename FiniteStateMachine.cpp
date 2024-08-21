@@ -25,6 +25,10 @@ FiniteStateMachine::FiniteStateMachine( Properties properties, States states, Tr
    currentState_(startState) 
 {
 
+   properties_.insert(Property::create("FiniteStateMachine::EnterState"));
+   properties_.insert(Property::create("FiniteStateMachine::ExitState"));
+   properties_.insert(Property::create("FiniteStateMachine::Transition"));
+
    // todo validate all edges against known states
    std::for_each(transitions_.begin(), transitions_.end(), [&](const FSMTransitionPtr& transition) {
       validate<>(states_, transition->getFrom());
@@ -49,7 +53,7 @@ void FiniteStateMachine::buildTransitionsForState(const std::string& stateName) 
 //               std::cout << stateName << ":" << transition->getProperty() << " changed to " << m.toString() << std::endl;
                if (transition->getConditional(ctx, m) ) {
                   if (!transition->hasMessage() || (m.compare(transition->getMessage()) == 0)) {
-                     ctx->transitionState(transition->getFrom(), transition->getTo());
+                     ctx->doTransition(transition);
                   }
                }
             });
@@ -64,20 +68,41 @@ void FiniteStateMachine::enterState(const std::string& state) {
    startAt->entry(this);
 }
 
-void FiniteStateMachine::transitionState(const std::string& fromState, const std::string& toState) {
+void FiniteStateMachine::doTransition(const FSMTransitionPtr& transition) {
    std::cout << "transitioning from " << currentState_ << std::endl;
+   
+   int transitionIndex = -1;
+   auto i = std::find(transitions_.begin(), transitions_.end(), transition);
+   if (i != transitions_.end()){
+         transitionIndex = (int)(i - transitions_.begin());
+   } else {
+      std::cout << "ERROR!!! transition is not from this FSM" << std::endl;
+      return;
+   }
 
-   // todo: trouble with multithreading locks
+   auto fromState = transition->getFrom();
+   auto toState = transition->getTo();
+
    if (fromState != currentState_) { 
       std::cout << "ERROR!!! " << fromState << " is not " << currentState_ << std::endl;
       return;
    }
+
+   // todo: trouble with multithreading locks
    auto current = states_.at(currentState_);
    currentState_ = hiddenStateWithNoTransitions_->getName();
    /// todo: no way to handle exceptions?
    current->exit(this);
+   // we let subscribers know after we exit
+   setProperty("FiniteStateMachine::ExitState", fromState);
+
+   // we let subscribers know which transition
+   setProperty("FiniteStateMachine::Transition", transitionIndex);
+
    currentState_ = toState;
    enterState(currentState_);
+   // we let subscribers know after we enter
+   setProperty("FiniteStateMachine::EnterState", toState);
 }
 
 PropertyPtr FiniteStateMachine::getProperty(std::string key) const {
@@ -96,12 +121,12 @@ void FiniteStateMachine::setProperty(std::string key, MessageType value) const {
 void FiniteStateMachine::MyUpdate(const MessageType& value) {
    std::cout << "My Update:" << value.toString() << std::endl;
 }
+
 void FiniteStateMachine::addInput(SubjectPtr input) {
    auto o = input->getObserver();
    o->setUpdate([&](const MessageType& m) { MyUpdate(m); });
    inputObservers_.push_back(o);
 }
-
 
 FiniteStateMachine::EdgesWithNames FiniteStateMachine::getEdgesWithNames() const {
    Edges edges;

@@ -2,7 +2,7 @@
 
 #include <deque>
 
-
+void doVolunteerJobs();
 int doGraph();
 unsigned roll(unsigned max);
 

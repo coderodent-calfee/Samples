@@ -65,62 +65,96 @@ std::vector<std::pair<size_t, size_t>> get_edges() {
        {54, 59}, {55, 56}, {55, 59}, {56, 57}, {57, 58}, {58, 59} };
 }
 
+#define ENTERED_COLOR 2.0
+#define NEUTRAL_COLOR 1.0
+#define EXITED_COLOR 0.0
+
+void FSMGraphAdapter::setEnteredState(const std::string& state) {
+
+   auto stateToIndex = [&](const std::string& stateName) { return std::find(nodeNames_.begin(), nodeNames_.end(), stateName) - nodeNames_.begin(); };
+   currentState_ = (int)stateToIndex(state);
+   colors_[currentState_] = ENTERED_COLOR;
+   graph_->marker_colors(colors_);
+   markerSizes_[currentState_] = 5.0;
+   graph_->marker_sizes(markerSizes_);
+
+}
+
+void FSMGraphAdapter::setExitedState(const std::string& state) {
+   
+   if (previousState_ != -1) {
+      colors_[previousState_] = NEUTRAL_COLOR;
+      markerSizes_[previousState_] = 3.0;
+   }
+
+   previousState_ = currentState_;
+   colors_[previousState_] = EXITED_COLOR;
+   graph_->marker_colors(colors_);
+   markerSizes_[previousState_] = 4.0;
+   graph_->marker_sizes(markerSizes_);
+
+}
+
+void FSMGraphAdapter::setTransitionEdge(int edgeIndex) {
+
+   std::vector<std::string> activeEdges(edgeNames_.size());
+   std::generate(activeEdges.begin(), activeEdges.end(), []() { return std::string(""); });
+   activeEdges[edgeIndex] = edgeNames_[edgeIndex];
+   graph_->edge_labels(activeEdges); // only show edge name when transition was active
+
+}
 
 
 
-FSMGraphAdapter::FSMGraphAdapter(const FSMContextPtr& ctx) {
+FSMGraphAdapter::FSMGraphAdapter(const FSMContextPtr& ctx) : ctx_(ctx) {
    using namespace matplot;
 
    // todo: get edges from ctx
    auto[ edges, edgeNames, nodeNames] = ctx->getEdgesWithNames();
    
-   auto stateToIndex = [&nodeNames](const std::string& stateName) { return std::find(nodeNames.begin(), nodeNames.end(), stateName) - nodeNames.begin(); };
-
    edgeNames_ = edgeNames;
    nodeNames_ = nodeNames;
+   auto stateToIndex = [&](const std::string& stateName) { return std::find(nodeNames_.begin(), nodeNames_.end(), stateName) - nodeNames_.begin(); };
+
+   colors_ = std::vector<double>(nodeNames_.size());
+
    currentState_ = (int)stateToIndex(ctx->getState());
+   transition_ = previousState_ = -1;
 
-   auto g = digraph(edges);
-   graph_ = g;
-   g->node_labels(nodeNames);// array of labels for the nodes
+   graph_ = digraph(edges);
+   graph_->node_labels(nodeNames_);// array of labels for the nodes
 
-   std::cout << "nodes:" << std::endl;
-   std::copy(nodeNames.begin(), nodeNames.end(), std::ostream_iterator<std::string>(std::cout, " "));
-   std::cout << std::endl;
+   //std::cout << "nodes:" << std::endl;
+   //std::copy(nodeNames.begin(), nodeNames.end(), std::ostream_iterator<std::string>(std::cout, " "));
+   //std::cout << std::endl;
 
-   g->line_style("-");
-   g->marker("o");
-   g->marker_size(20);
-   g->node_color("yellow");
+   graph_->line_style("-");
+   graph_->marker("o");
 
-   auto lineSpec = g->line_spec();
+   auto lineSpec = graph_->line_spec();
 
+   std::fill_n(colors_.begin(), nodeNames_.size(), NEUTRAL_COLOR);
+   colors_[currentState_] = ENTERED_COLOR;
+   graph_->marker_colors(colors_);
 
-   std::vector<double> colors(nodeNames.size());
-   std::fill_n(colors.begin(), nodeNames.size(), 1.0);
-   colors[currentState_] = 2.0;
-   g->marker_colors(colors);
-   std::cout << "colors:" << std::endl;
-   std::copy(colors.begin(), colors.end(), std::ostream_iterator<double>(std::cout, " "));
-   std::cout << std::endl;
-
-   std::vector<float> markerSizes(nodeNames.size());
-   std::generate(markerSizes.begin(), markerSizes.end(), []() { return 3.0f; });
-   markerSizes[currentState_] = 5.0;
-   g->marker_sizes(markerSizes);
-   auto marker_sizes = g->marker_sizes();
-
+   markerSizes_ = std::vector<float>(nodeNames_.size());
+   std::generate(markerSizes_.begin(), markerSizes_.end(), []() { return 3.0f; });
+   markerSizes_[currentState_] = 5.0;
+   graph_->marker_sizes(markerSizes_);
+   auto marker_sizes = graph_->marker_sizes();
 
    //std::vector<double> lineWidths(edgeNames_.size());
    //std::generate(lineWidths.begin(), lineWidths.end(), []() { return 10.0; });
    //lineWidths[1] = 30.0;
    //g->line_widths(lineWidths);
 
-   std::vector<std::string> edgesA(edgeNames_.size());
 
-   std::generate(edgesA.begin(), edgesA.end(), []() { return std::string(""); });
-   edgesA[1] = edgeNames_[1];
-   g->edge_labels(edgesA); // only show edge name when transition was active
+   entryObserver_ = ctx->getProperty("FiniteStateMachine::EnterState")->getObserver();
+   entryObserver_->setUpdate([=](const MessageType& m) { setEnteredState(m.get<std::string>()); });
 
+   exitObserver_ = ctx->getProperty("FiniteStateMachine::ExitState")->getObserver();
+   exitObserver_->setUpdate([=](const MessageType& m) { setExitedState(m.get<std::string>()); });
 
+   edgeObserver_ = ctx->getProperty("FiniteStateMachine::Transition")->getObserver();
+   edgeObserver_->setUpdate([=](const MessageType& m) { setTransitionEdge(m.get<int>()); });
 }

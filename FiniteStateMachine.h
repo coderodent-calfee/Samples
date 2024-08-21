@@ -70,7 +70,7 @@ public:
 private:
    void buildTransitionsForState(const std::string& state);
    void enterState(const std::string& state);
-   void transitionState(const std::string& fromState, const std::string& toState);
+   void doTransition(const FSMTransitionPtr& transition);
 
    template <typename T> void validate(const T& map, std::string key) const;
    FSMStatePtr hiddenStateWithNoTransitions_;
@@ -91,7 +91,17 @@ private:
    int  transition_;
    FiniteStateMachine::Names edgeNames_;
    FiniteStateMachine::Names nodeNames_;
-   
+   std::vector<double> colors_;
+   std::vector<float> markerSizes_;
+
+   ObserverPtr entryObserver_;
+   ObserverPtr exitObserver_;
+   ObserverPtr edgeObserver_;
+
+   void setEnteredState(const std::string& state);
+   void setExitedState(const std::string& state);
+   void setTransitionEdge(int edgeIndex);
+   const FSMContextPtr& ctx_;
 public:
    FSMGraphAdapter(const FSMContextPtr& ctx);
    void show() {
